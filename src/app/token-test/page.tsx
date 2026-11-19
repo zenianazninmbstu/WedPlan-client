@@ -5,9 +5,14 @@ import { authClient } from "@/lib/auth-client";
 
 export default function TokenTestPage() {
   const getToken = async () => {
-    const result = await authClient.token();
+    console.log("Button clicked!");
 
-    console.log("JWT Token:", result);
+    try {
+      const result = await authClient.token();
+      console.log("Token response:", result);
+    } catch (error) {
+      console.error("Token error:", error);
+    }
   };
 
   return (
@@ -15,8 +20,9 @@ export default function TokenTestPage() {
       <h1 className="text-xl font-bold">JWT Token Test</h1>
 
       <button
+        type="button"
         onClick={getToken}
-        className="btn btn-primary mt-4"
+        className="mt-4 rounded-md bg-blue-600 px-5 py-2 text-white"
       >
         Get JWT Token
       </button>
