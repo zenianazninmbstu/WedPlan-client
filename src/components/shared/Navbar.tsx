@@ -34,8 +34,7 @@ export default function Navbar() {
     } catch (error) {
       console.error("Logout failed:", error);
     }
-  };
-
+  }
   return (
     <nav className="relative z-50 w-full border-b border-gray-100 bg-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
@@ -88,11 +87,13 @@ export default function Navbar() {
                 aria-expanded={isProfileOpen}
               >
                 {user.image ? (
-                  <img
-                    src={user.image}
-                    alt={user.name}
-                    className="h-9 w-9 rounded-full object-cover"
-                  />
+                 <img
+  src={user.image}
+  alt={user.name}
+  width={36}
+  height={36}
+  className="h-9 w-9 rounded-full object-cover"
+/>
                 ) : (
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#174C3C] font-semibold text-white">
                     {user.name?.charAt(0).toUpperCase() || "U"}
@@ -194,7 +195,13 @@ export default function Navbar() {
             <div className="flex flex-col gap-3 border-t border-gray-100 pt-5">
               <div className="flex items-center gap-3">
                 {user.image ? (
-                  <img src={user.image} alt={user.name} className="h-10 w-10 rounded-full object-cover" />
+                <img
+  src={user.image}
+  alt={user.name}
+  width={40}
+  height={40}
+  className="h-10 w-10 rounded-full object-cover"
+/>
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#174C3C] font-semibold text-white">
                     {user.name?.charAt(0).toUpperCase() || "U"}
