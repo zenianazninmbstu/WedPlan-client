@@ -57,11 +57,17 @@ export default function SignUpPage() {
 
     try {
       const result = await authClient.signUp.email({
-        name: name.trim(),
-        email: email.trim(),
-        password,
-        role,
-      });
+  name,
+  email,
+  password,
+  role,
+  isBlocked: false,
+  businessName: "",
+  subscriptionPlan: "free",
+  subscriptionExpiresAt: new Date(),
+});
+
+
 
       if (result.error) {
         throw new Error(result.error.message || "Registration failed.");

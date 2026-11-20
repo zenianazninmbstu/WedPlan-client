@@ -15,7 +15,6 @@ import {
   ImagePlus,
   Loader2,
   Upload,
-  X,
   Image,
   Trash2,
 } from "lucide-react";
@@ -42,6 +41,7 @@ export default function AddServicePage() {
 
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
+  const previewUrlRef = useRef<string | null>(null);
 
   const [imagePosition, setImagePosition] = useState({
     x: 50,
@@ -78,18 +78,14 @@ export default function AddServicePage() {
     }
   }, [session, isPending, router]);
 
-  // Image preview
-  useEffect(() => {
-    if (!image) {
-      setPreview("");
-      return;
+// Clean up preview URL
+useEffect(() => {
+  return () => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
     }
-
-    const imageUrl = URL.createObjectURL(image);
-    setPreview(imageUrl);
-
-    return () => URL.revokeObjectURL(imageUrl);
-  }, [image]);
+  };
+}, []);
 
   // Select image
   const handleImageSelect = (selectedImage?: File) => {
@@ -105,9 +101,18 @@ export default function AddServicePage() {
       return;
     }
 
-    setError("");
-    setImage(selectedImage);
-    setImagePosition({ x: 50, y: 50 });
+  setError("");
+
+if (previewUrlRef.current) {
+  URL.revokeObjectURL(previewUrlRef.current);
+}
+
+const imageUrl = URL.createObjectURL(selectedImage);
+previewUrlRef.current = imageUrl;
+
+setPreview(imageUrl);
+setImage(selectedImage);
+setImagePosition({ x: 50, y: 50 });
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -242,6 +247,12 @@ export default function AddServicePage() {
 
   // Remove selected image
   const handleRemoveImage = () => {
+    if (previewUrlRef.current) {
+  URL.revokeObjectURL(previewUrlRef.current);
+  previewUrlRef.current = null;
+}
+
+setPreview("");
     setImage(null);
     setImagePosition({ x: 50, y: 50 });
     dragStart.current = null;
@@ -332,6 +343,13 @@ export default function AddServicePage() {
       }
 
       setMessage("Your service has been submitted for admin approval!");
+
+      if (previewUrlRef.current) {
+  URL.revokeObjectURL(previewUrlRef.current);
+  previewUrlRef.current = null;
+}
+
+setPreview("");
 
       // Clear form
       setName("");
