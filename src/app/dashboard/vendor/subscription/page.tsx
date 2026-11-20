@@ -38,20 +38,14 @@ const demoPayments = [
 
 export default function VendorSubscriptionPage() {
   const [currentPlan] = useState<"free" | "premium">("free");
+  const [notice, setNotice] = useState("");
   const [upgrading, setUpgrading] = useState(false);
 
   const isPremium = currentPlan === "premium";
 
   function handleUpgrade() {
-    // Stripe Checkout will be connected in the backend step.
-    setUpgrading(true);
-
-    // Temporary frontend demonstration only.
-    setTimeout(() => {
-      setUpgrading(false);
-      alert("Stripe Checkout will be connected in the next step.");
-    }, 500);
-  }
+  setNotice("Premium checkout will be available after payment integration.");
+}
 
   return (
     <main className="min-h-screen space-y-8 bg-[#F8F5EE] p-4 text-[#174C3C] sm:p-6 lg:p-8">
@@ -97,23 +91,27 @@ export default function VendorSubscriptionPage() {
             </p>
           </div>
 
-          {!isPremium && (
-            <button
-              type="button"
-              onClick={handleUpgrade}
-              disabled={upgrading}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#174C3C] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#10392D] disabled:opacity-60"
-            >
-              {upgrading ? (
-                <Loader2 size={17} className="animate-spin" />
-              ) : (
-                <Crown size={17} />
-              )}
-              Upgrade to Premium
-              {!upgrading && <ArrowRight size={16} />}
-            </button>
-          )}
-        </div>
+         
+           {!isPremium && (
+  <div className="flex flex-col items-start">
+    <button
+      type="button"
+      onClick={handleUpgrade}
+      className="inline-flex items-center justify-center gap-2 rounded-full bg-[#174C3C] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#10392D]"
+    >
+      <Crown size={17} />
+      Upgrade to Premium
+      <ArrowRight size={16} />
+    </button>
+
+    {notice && (
+      <p role="status" className="mt-3 text-sm text-amber-700">
+        {notice}
+      </p>
+    )}
+  </div>
+)}
+</div>
       </section>
 
       {/* Plan Cards */}
