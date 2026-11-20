@@ -4,14 +4,25 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const router = useRouter();
+  const pathname = usePathname();
+
+const currentPage = pathname
+  .split("/")
+  .filter(Boolean)
+  .pop()
+  ?.replace(/-/g, " ")
+  .replace(/\b\w/g, (char) => char.toUpperCase());
+
+
+
   const { data: session, isPending } = authClient.useSession();
 
   const user = session?.user;
@@ -57,6 +68,12 @@ export default function Navbar() {
           <Link href="/services" className="text-sm font-semibold text-gray-800 hover:text-[#174C3C]">
             Browse Services
           </Link>
+
+          {pathname.startsWith("/dashboard/") && currentPage && (
+  <span className="text-sm font-semibold text-gray-800">
+    {currentPage}
+  </span>
+)}
         </div>
 
         <div className="hidden items-center gap-4 md:flex">
@@ -170,6 +187,12 @@ export default function Navbar() {
           <Link href="/services" onClick={() => setIsMenuOpen(false)} className="text-sm font-semibold text-gray-800">
             Browse Services
           </Link>
+
+          {pathname.startsWith("/dashboard/") && currentPage && (
+  <span className="text-sm font-semibold text-gray-800">
+    {currentPage}
+  </span>
+)}
 
           {!isPending && !user && (
             <div className="flex flex-wrap gap-3 border-t border-gray-100 pt-5">
