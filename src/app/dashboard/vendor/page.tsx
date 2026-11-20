@@ -1,18 +1,50 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import {
   BriefcaseBusiness,
   CalendarDays,
-  CreditCard,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+type Service = {
+  _id: string;
+  isActive: boolean;
+  status: string;
+};
+
+type Booking = {
+  _id: string;
+  status: string;
+};
+
+type DashboardStats = {
+  totalServices: number;
+  activeServices: number;
+  pendingBookings: number;
+  acceptedBookings: number;
+};
 
 export default function VendorDashboard() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
+
+  const [stats, setStats] = useState<DashboardStats>({
+    totalServices: 0,
+    activeServices: 0,
+    pendingBookings: 0,
+    acceptedBookings: 0,
+  });
+
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [statsError, setStatsError] = useState("");
 
   useEffect(() => {
     if (isPending) return;
@@ -26,6 +58,80 @@ export default function VendorDashboard() {
       router.replace("/");
     }
   }, [session, isPending, router]);
+
+  useEffect(() => {
+    if (!session || session.user.role !== "vendor" || session.user.isBlocked) {
+      return;
+    }
+
+    const loadDashboardStats = async () => {
+      try {
+        setIsLoadingStats(true);
+        setStatsError("");
+
+        const tokenResult = await authClient.token();
+
+        if (tokenResult.error || !tokenResult.data?.token) {
+          throw new Error("Your session has expired. Please sign in again.");
+        }
+
+        const headers = {
+          Authorization: `Bearer ${tokenResult.data.token}`,
+        };
+
+        const [servicesResponse, bookingsResponse] = await Promise.all([
+          fetch(`${API_URL}/api/services/vendor/my-services`, { headers }),
+          fetch(`${API_URL}/api/bookings/vendor/requests`, { headers }),
+        ]);
+
+        const servicesData = await servicesResponse.json();
+        const bookingsData = await bookingsResponse.json();
+
+        if (!servicesResponse.ok) {
+          throw new Error(
+            servicesData.message || "Could not load your services."
+          );
+        }
+
+        if (!bookingsResponse.ok) {
+          throw new Error(
+            bookingsData.message || "Could not load your bookings."
+          );
+        }
+
+        const services: Service[] = Array.isArray(servicesData.services)
+          ? servicesData.services
+          : [];
+
+        const bookings: Booking[] = Array.isArray(bookingsData.bookings)
+          ? bookingsData.bookings
+          : [];
+
+        setStats({
+          totalServices: services.length,
+          activeServices: services.filter(
+            (service) => service.isActive === true
+          ).length,
+          pendingBookings: bookings.filter(
+            (booking) => booking.status === "pending"
+          ).length,
+          acceptedBookings: bookings.filter(
+            (booking) => booking.status === "accepted"
+          ).length,
+        });
+      } catch (error) {
+        setStatsError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load dashboard statistics."
+        );
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
+    loadDashboardStats();
+  }, [session]);
 
   if (isPending || !session) {
     return (
@@ -47,6 +153,29 @@ export default function VendorDashboard() {
     );
   }
 
+  const statCards = [
+    {
+      title: "Total Services",
+      value: stats.totalServices,
+      icon: BriefcaseBusiness,
+    },
+    {
+      title: "Active Services",
+      value: stats.activeServices,
+      icon: CheckCircle2,
+    },
+    {
+      title: "Pending Booking Requests",
+      value: stats.pendingBookings,
+      icon: Clock,
+    },
+    {
+      title: "Accepted Bookings",
+      value: stats.acceptedBookings,
+      icon: CalendarDays,
+    },
+  ];
+
   return (
     <div className="min-h-[70vh]">
       <p className="text-sm font-medium tracking-wider text-[#A47C55]">
@@ -61,26 +190,31 @@ export default function VendorDashboard() {
         Manage your wedding services and booking activities from here.
       </p>
 
-      <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        <div className="rounded-2xl border border-[#E8E1D5] bg-white p-6 shadow-sm">
-          <BriefcaseBusiness className="text-[#A47C55]" size={28} />
-          <p className="mt-5 text-sm text-[#6B746E]">Total Services</p>
-          <h2 className="mt-2 text-3xl font-bold text-[#174C3C]">0</h2>
+      {statsError && (
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+          {statsError}
         </div>
+      )}
 
-        <div className="rounded-2xl border border-[#E8E1D5] bg-white p-6 shadow-sm">
-          <CalendarDays className="text-[#A47C55]" size={28} />
-          <p className="mt-5 text-sm text-[#6B746E]">Booking Requests</p>
-          <h2 className="mt-2 text-3xl font-bold text-[#174C3C]">0</h2>
-        </div>
+      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        {statCards.map((card) => {
+          const Icon = card.icon;
 
-        <div className="rounded-2xl border border-[#E8E1D5] bg-white p-6 shadow-sm sm:col-span-2 xl:col-span-1">
-          <CreditCard className="text-[#A47C55]" size={28} />
-          <p className="mt-5 text-sm text-[#6B746E]">Subscription Plan</p>
-          <h2 className="mt-2 text-2xl font-bold text-[#174C3C]">
-            Free Plan
-          </h2>
-        </div>
+          return (
+            <div
+              key={card.title}
+              className="rounded-2xl border border-[#E8E1D5] bg-white p-6 shadow-sm"
+            >
+              <Icon className="text-[#A47C55]" size={28} />
+
+              <p className="mt-5 text-sm text-[#6B746E]">{card.title}</p>
+
+              <h2 className="mt-2 text-3xl font-bold text-[#174C3C]">
+                {isLoadingStats ? "..." : card.value}
+              </h2>
+            </div>
+          );
+        })}
       </div>
 
       <div className="mt-8 rounded-2xl bg-[#174C3C] p-6 text-white sm:p-8">
