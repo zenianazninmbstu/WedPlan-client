@@ -53,52 +53,43 @@ export default function VendorDashboard() {
     );
   }
 
-  const menuItems = [
-    { name: "Overview", icon: LayoutDashboard },
-    { name: "My Services", icon: BriefcaseBusiness },
-    { name: "Add Service", icon: PlusCircle },
-    { name: "Booking Requests", icon: CalendarDays },
-    { name: "Subscription", icon: CreditCard },
-    { name: "Profile Settings", icon: Settings },
-  ];
+ const menuItems = [
+  { name: "Overview", icon: LayoutDashboard, href: "/dashboard/vendor" },
+  { name: "My Services", icon: BriefcaseBusiness, href: "/dashboard/vendor/services" },
+  { name: "Add Service", icon: PlusCircle, href: "/dashboard/vendor/add-service" },
+  { name: "Booking Requests", icon: CalendarDays, href: "/dashboard/vendor/bookings" },
+  { name: "Subscription", icon: CreditCard, href: "/dashboard/vendor/subscription" },
+  { name: "Profile Settings", icon: Settings, href: "/dashboard/vendor/profile" },
+];
 
   return (
     <div className="min-h-screen bg-[#F8F5EE] md:flex">
 
       {/* Sidebar */}
       <aside className="w-full border-b border-[#E8E1D5] bg-white p-5 md:min-h-screen md:w-64 md:border-b-0 md:border-r md:p-6">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-[#174C3C] p-3 text-white">
-            <Store size={23} />
-          </div>
 
-          <div>
-            <h2 className="font-playfair text-xl font-bold text-[#174C3C]">
-              WedPlan
-            </h2>
-            <p className="text-xs text-[#858B85]">Vendor Dashboard</p>
-          </div>
-        </div>
 
         <nav className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-1">
-          {menuItems.map((item, index) => {
-            const Icon = item.icon;
+  {menuItems.map((item, index) => {
+    const Icon = item.icon;
 
-            return (
-              <div
-                key={item.name}
-                className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium ${
-                  index === 0
-                    ? "bg-[#174C3C] text-white"
-                    : "text-[#59665E]"
-                }`}
-              >
-                <Icon size={18} />
-                {item.name}
-              </div>
-            );
-          })}
-        </nav>
+    return (
+      <button
+        key={item.name}
+        type="button"
+        onClick={() => router.push(item.href)}
+        className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition hover:bg-[#E5EFE8] ${
+          index === 0
+            ? "bg-[#174C3C] text-white hover:bg-[#23634F]"
+            : "text-[#59665E]"
+        }`}
+      >
+        <Icon size={18} />
+        {item.name}
+      </button>
+    );
+  })}
+</nav>
       </aside>
 
       {/* Main Content */}
