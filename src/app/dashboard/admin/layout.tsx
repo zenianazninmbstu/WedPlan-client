@@ -26,7 +26,7 @@ const adminLinks = [
   },
   {
     name: "Manage Services",
-    href: "/dashboard/admin/services",
+    href: "/dashboard/admin/manage-services",
     icon: BriefcaseBusiness,
     description: "Review, approve, and manage platform services.",
   },
