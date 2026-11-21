@@ -61,10 +61,7 @@ export default function SignUpPage() {
   email,
   password,
   role,
-  isBlocked: false,
   businessName: "",
-  subscriptionPlan: "free",
-  subscriptionExpiresAt: new Date(),
 });
 
 

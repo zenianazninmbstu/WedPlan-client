@@ -10,24 +10,29 @@ export const authClient = createAuthClient({
 
   plugins: [
     jwtClient(),
-    inferAdditionalFields({
-      user: {
-        role: {
-          type: "string",
-        },
-        isBlocked: {
-          type: "boolean",
-        },
-        businessName: {
-          type: "string",
-        },
-        subscriptionPlan: {
-          type: "string",
-        },
-        subscriptionExpiresAt: {
-          type: "date",
-        },
-      },
-    }),
+   inferAdditionalFields({
+  user: {
+    role: {
+      type: "string",
+      required: false,
+    },
+    isBlocked: {
+      type: "boolean",
+      required: false,
+    },
+    businessName: {
+      type: "string",
+      required: false,
+    },
+    subscriptionPlan: {
+      type: "string",
+      required: false,
+    },
+    subscriptionExpiresAt: {
+      type: "date",
+      required: false,
+    },
+  },
+}),
   ],
 });
