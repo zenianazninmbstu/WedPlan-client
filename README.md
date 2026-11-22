@@ -1,36 +1,119 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WedPlan — Wedding Planning Platform
 
-## Getting Started
+WedPlan is a full-stack wedding planning platform where customers can discover professional wedding services, explore vendors, and request bookings. Vendors can manage their services and booking requests, while administrators manage users, services, and platform transactions.
 
-First, run the development server:
+## 🌐 Live Website
 
-```bash
+[Add your deployed client URL here]
+
+## 📂 Project Repositories
+
+- Client Repository: [WedPlan Client](https://github.com/zenianazninmbstu/wedplan-client)
+- Server Repository: [WedPlan Server](https://github.com/zenianazninmbstu/WedPlan-server)
+
+## ✨ Key Features
+
+- Role-based authentication for Admin, Vendor, and Customer.
+- Browse and search wedding services.
+- Filter services by category and location.
+- Sort services by price.
+- View detailed service information.
+- Submit and manage wedding booking requests.
+- Vendor dashboard with service and booking management.
+- Free and Premium vendor subscription plans.
+- Secure Stripe Checkout integration.
+- Customer and Vendor profile management.
+- Image uploads using ImgBB.
+- Admin dashboard for managing users, services, and transactions.
+- Responsive user interface.
+- Loading states and toast notifications.
+- Smooth UI animations.
+
+## 🛠️ Technology Stack
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- ShadCN UI
+- Node.js
+- Express.js
+- JavaScript (ES Modules)
+- MongoDB
+- Better Auth
+- JOSE
+- Stripe Checkout
+- ImgBB
+- Framer Motion / Motion
+- Sonner
+- Lucide React
+
+## ⚙️ Installation & Setup
+
+### 1. Clone the Repository
+
+
+git clone https://github.com/zenianazninmbstu/wedplan-client.git
+
+
+### 2. Navigate to the Project Directory
+
+
+cd wedplan-client
+
+
+### 3. Install Dependencies
+
+
+npm install
+
+
+### 4. Configure Environment Variables
+
+Create a `.env.local` file in the project root:
+
+
+NEXT_PUBLIC_API_URL=http://localhost:5000
+
+
+Add any other required public configuration variables used by your local setup. Never expose secret credentials in frontend code.
+
+## 🚀 Run Locally
+
+Start the development server:
+
+
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Open your browser:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`http://localhost:3000`
 
-## Learn More
+Make sure the Express backend server is running before using backend-dependent features.
 
-To learn more about Next.js, take a look at the following resources:
+## 🏗️ Build for Production
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+npm run build
+npm run start
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔐 Security & Configuration
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Protected routes and authentication are handled through Better Auth.
+- Backend authorization and sensitive operations are verified by the server.
+- Environment variables are used for application configuration.
+- Secret credentials must never be exposed in frontend code.
+- Never upload `.env.local` to GitHub.
+
+## 📝 Important Notes
+
+- Configure the backend API URL before running the client locally.
+- Ensure the server and required integrations are properly configured.
+- Use Stripe Test Mode credentials during development.
+- Keep client and server environment configurations consistent.
+
+
+
+**WedPlan — Making Wedding Planning Easier, Smarter, and More Beautiful.**

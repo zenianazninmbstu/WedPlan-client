@@ -1,9 +1,11 @@
+
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
 import {
   CalendarDays,
   Check,
+  LoaderCircle,
   Mail,
   MapPin,
   MessageSquareText,
@@ -13,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import Image from "next/image";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -27,6 +30,7 @@ type Booking = {
   service?: {
     name?: string;
     price?: number | string;
+     images?: string[];
   };
   price?: number | string;
   eventDate: string;
@@ -41,6 +45,8 @@ export default function VendorBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] =
+    useState<"accepted" | "rejected" | null>(null);
 
   const getToken = async () => {
     const result = await authClient.token();
@@ -96,6 +102,7 @@ export default function VendorBookingsPage() {
   ) => {
     try {
       setUpdatingId(bookingId);
+      setUpdatingStatus(status);
 
       const token = await getToken();
 
@@ -139,9 +146,9 @@ export default function VendorBookingsPage() {
         err instanceof Error ? err.message : "Something went wrong.";
 
       toast.error(message);
-      fetchBookings();
     } finally {
       setUpdatingId(null);
+      setUpdatingStatus(null);
     }
   };
 
@@ -208,7 +215,7 @@ export default function VendorBookingsPage() {
       <div className="flex justify-end">
         <button
           onClick={fetchBookings}
-          disabled={loading}
+          disabled={loading || updatingId !== null}
           className="inline-flex items-center gap-2 rounded-lg border border-[#174C3C]/20 px-4 py-2 text-sm font-medium text-[#174C3C] transition hover:bg-[#174C3C]/5 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
@@ -258,6 +265,7 @@ export default function VendorBookingsPage() {
         </div>
       )}
 
+  
       {/* Booking Cards */}
       {!loading && !error && bookings.length > 0 && (
         <div className="space-y-5">
@@ -270,63 +278,82 @@ export default function VendorBookingsPage() {
             const servicePrice =
               booking.price ?? booking.service?.price;
 
+            const isUpdating = updatingId === booking._id;
+
             return (
               <article
                 key={booking._id}
                 className="rounded-2xl border border-[#174C3C]/10 bg-white p-4 shadow-sm transition hover:shadow-md sm:p-6"
               >
-                {/* First Row: Service, Status, Price and Actions */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-                    <h2 className="font-playfair text-lg font-bold text-[#174C3C] sm:text-xl">
-                      {serviceName}
-                    </h2>
 
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getStatusStyle(
-                        booking.status
-                      )}`}
-                    >
-                      {booking.status}
-                    </span>
+{/* Service Header */}
+<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <div className="flex min-w-0 items-center gap-4">
+    {booking.service?.images?.[0] && (
+      <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl sm:h-24 sm:w-32">
+        <Image
+          src={booking.service.images[0]}
+          alt={serviceName}
+          fill
+          sizes="128px"
+          className="object-cover"
+        />
+      </div>
+    )}
 
-                    <span className="text-base font-bold text-[#A47C55]">
-                      {formatPrice(servicePrice)}
-                    </span>
-                  </div>
+    <div className="min-w-0 space-y-2">
+      <h2 className="font-playfair text-lg font-bold text-[#174C3C] sm:text-xl">
+        {serviceName}
+      </h2>
 
-                  {/* Both Buttons Stay Side by Side on the Right */}
-                  {booking.status === "pending" && (
-                    <div className="ml-auto flex shrink-0 items-center gap-2">
-                      <button
-                        onClick={() =>
-                          handleBookingAction(booking._id, "accepted")
-                        }
-                        disabled={updatingId === booking._id}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:text-sm"
-                      >
-                        <Check size={15} />
-                        {updatingId === booking._id
-                          ? "Updating..."
-                          : "Accept"}
-                      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getStatusStyle(
+            booking.status
+          )}`}
+        >
+          {booking.status}
+        </span>
 
-                      <button
-                        onClick={() =>
-                          handleBookingAction(booking._id, "rejected")
-                        }
-                        disabled={updatingId === booking._id}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:text-sm"
-                      >
-                        <X size={15} />
-                        Reject
-                      </button>
-                    </div>
-                  )}
-                </div>
+        <span className="text-base font-bold text-[#A47C55]">
+          {formatPrice(servicePrice)}
+        </span>
+      </div>
+    </div>
+  </div>
 
-                <div className="my-5 border-t border-gray-100" />
+  {booking.status === "pending" && (
+    <div className="flex shrink-0 items-center gap-2">
+      <button
+        onClick={() => handleBookingAction(booking._id, "accepted")}
+        disabled={updatingId !== null}
+        className="inline-flex items-center gap-1.5 rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:text-sm"
+      >
+        {isUpdating && updatingStatus === "accepted" ? (
+          <LoaderCircle size={15} className="animate-spin" />
+        ) : (
+          <Check size={15} />
+        )}
+        {isUpdating && updatingStatus === "accepted" ? "Updating..." : "Accept"}
+      </button>
 
+      <button
+        onClick={() => handleBookingAction(booking._id, "rejected")}
+        disabled={updatingId !== null}
+        className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:text-sm"
+      >
+        {isUpdating && updatingStatus === "rejected" ? (
+          <LoaderCircle size={15} className="animate-spin" />
+        ) : (
+          <X size={15} />
+        )}
+        {isUpdating && updatingStatus === "rejected" ? "Updating..." : "Reject"}
+      </button>
+    </div>
+  )}
+</div>
+
+              
                 {/* Customer and Event Information */}
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
@@ -351,7 +378,9 @@ export default function VendorBookingsPage() {
 
                   <div className="flex items-center gap-2">
                     <MapPin size={16} className="shrink-0 text-[#A47C55]" />
-                    <span>{booking.eventLocation || "Location not provided"}</span>
+                    <span>
+                      {booking.eventLocation || "Location not provided"}
+                    </span>
                   </div>
                 </div>
 
