@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Check,
   Crown,
@@ -18,7 +18,6 @@ import { authClient } from "@/lib/auth-client";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-
 const freeFeatures = [
   "Maximum 3 Active Services",
   "Basic Vendor Dashboard",
@@ -32,61 +31,148 @@ const premiumFeatures = [
   "Priority Service Placement",
 ];
 
-const demoPayments = [
-  {
-    id: 1,
-    plan: "Free Plan",
-    amount: "$0.00",
-    status: "Active",
-    date: "Current Plan",
-  },
-];
+type Payment = {
+  _id?: string;
+  plan?: string;
+  amount?: number | string;
+  currency?: string;
+  status?: string;
+  paymentStatus?: string;
+  createdAt?: string;
+};
 
 export default function VendorSubscriptionPage() {
-  const [currentPlan] = useState<"free" | "premium">("free");
+  const [currentPlan, setCurrentPlan] = useState<"free" | "premium">("free");
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState("");
   const [upgrading, setUpgrading] = useState(false);
 
   const isPremium = currentPlan === "premium";
 
-async function handleUpgrade() {
-  try {
-    setUpgrading(true);
-    setNotice("");
+  useEffect(() => {
+    const loadSubscription = async () => {
+      try {
+        setLoadingSubscription(true);
+        setLoadError("");
 
-    const result = await authClient.token();
-    const token = result.data?.token;
+        const result = await authClient.token();
+        const token = result.data?.token;
 
-    if (!token) {
-      throw new Error("Please sign in again.");
-    }
+        if (!token) {
+          throw new Error("Please sign in again.");
+        }
 
-    const response = await fetch(
-      `${API_URL}/api/payments/create-checkout-session`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        const response = await fetch(
+          `${API_URL}/api/payments/my-subscription`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(
+            data.message || "Failed to load subscription details."
+          );
+        }
+
+        setCurrentPlan(
+          data.subscription?.plan === "premium" ? "premium" : "free"
+        );
+
+        setExpiresAt(data.subscription?.expiresAt || null);
+
+        setPayments(
+          Array.isArray(data.transactions) ? data.transactions : []
+        );
+      } catch (error) {
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load subscription details."
+        );
+      } finally {
+        setLoadingSubscription(false);
       }
-    );
+    };
 
-    const data = await response.json();
+    loadSubscription();
+  }, []);
 
-    if (!response.ok || !data.success || !data.url) {
-      throw new Error(data.message || "Unable to start checkout.");
+  async function handleUpgrade() {
+    try {
+      setUpgrading(true);
+      setNotice("");
+
+      const result = await authClient.token();
+      const token = result.data?.token;
+
+      if (!token) {
+        throw new Error("Please sign in again.");
+      }
+
+      const response = await fetch(
+        `${API_URL}/api/payments/create-checkout-session`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success || !data.url) {
+        throw new Error(data.message || "Unable to start checkout.");
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again."
+      );
+
+      setUpgrading(false);
+    }
+  }
+
+  function formatAmount(amount?: number | string, currency?: string) {
+    const value = Number(amount);
+
+    if (!Number.isFinite(value)) {
+      return "—";
     }
 
-    window.location.href = data.url;
-  } catch (error) {
-    setNotice(
-      error instanceof Error
-        ? error.message
-        : "Something went wrong. Please try again."
-    );
-    setUpgrading(false);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: (currency || "USD").toUpperCase(),
+      }).format(value);
   }
-}
+
+  function formatDate(date?: string) {
+    if (!date) return "—";
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "—";
+    }
+
+    return parsedDate.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
 
   return (
     <main className="min-h-screen space-y-8 bg-[#F8F5EE] p-4 text-[#174C3C] sm:p-6 lg:p-8">
@@ -116,43 +202,70 @@ async function handleUpgrade() {
 
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <h2 className="font-playfair text-2xl font-semibold">
-                {isPremium ? "Premium Plan" : "Free Plan"}
+                {loadingSubscription
+                  ? "Loading..."
+                  : isPremium
+                    ? "Premium Plan"
+                    : "Free Plan"}
               </h2>
 
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Active
-              </span>
+              {!loadingSubscription && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  Active
+                </span>
+              )}
             </div>
 
             <p className="mt-2 text-sm text-[#6B746E]">
-              {isPremium
-                ? "You have access to all Premium features."
-                : "You are currently using the Free plan."}
+              {loadingSubscription
+                ? "Loading your subscription details..."
+                : isPremium
+                  ? "You have access to all Premium features."
+                  : "You are currently using the Free plan."}
             </p>
+
+            {!loadingSubscription && isPremium && expiresAt && (
+              <p className="mt-2 text-sm text-[#6B746E]">
+                Expires on:{" "}
+                <span className="font-semibold text-[#174C3C]">
+                  {formatDate(expiresAt)}
+                </span>
+              </p>
+            )}
+
+            {loadError && (
+              <p role="alert" className="mt-3 text-sm text-red-600">
+                {loadError}
+              </p>
+            )}
           </div>
 
-         
-           {!isPremium && (
-  <div className="flex flex-col items-start">
-    <button
-      type="button"
-      onClick={handleUpgrade}
-      className="inline-flex items-center justify-center gap-2 rounded-full bg-[#174C3C] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#10392D]"
-    >
-      <Crown size={17} />
-      Upgrade to Premium
-      <ArrowRight size={16} />
-    </button>
+          {!loadingSubscription && !isPremium && (
+            <div className="flex flex-col items-start">
+              <button
+                type="button"
+                onClick={handleUpgrade}
+                disabled={upgrading}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#174C3C] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#10392D] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {upgrading ? (
+                  <Loader2 size={17} className="animate-spin" />
+                ) : (
+                  <Crown size={17} />
+                )}
+                {upgrading ? "Redirecting..." : "Upgrade to Premium"}
+                {!upgrading && <ArrowRight size={16} />}
+              </button>
 
-    {notice && (
-      <p role="status" className="mt-3 text-sm text-amber-700">
-        {notice}
-      </p>
-    )}
-  </div>
-)}
-</div>
+              {notice && (
+                <p role="status" className="mt-3 text-sm text-amber-700">
+                  {notice}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Plan Cards */}
@@ -179,7 +292,7 @@ async function handleUpgrade() {
                 </p>
               </div>
 
-              {!isPremium && (
+              {!loadingSubscription && !isPremium && (
                 <span className="shrink-0 rounded-full bg-[#EAF1EC] px-3 py-1.5 text-xs font-bold text-[#174C3C]">
                   Current Plan
                 </span>
@@ -261,7 +374,7 @@ async function handleUpgrade() {
             <button
               type="button"
               onClick={handleUpgrade}
-              disabled={isPremium || upgrading}
+              disabled={isPremium || upgrading || loadingSubscription}
               className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#174C3C] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#10392D] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {upgrading ? (
@@ -269,7 +382,13 @@ async function handleUpgrade() {
               ) : (
                 <Crown size={17} />
               )}
-              {isPremium ? "Current Premium Plan" : "Upgrade to Premium"}
+
+              {isPremium
+                ? "Current Premium Plan"
+                : upgrading
+                  ? "Redirecting..."
+                  : "Upgrade to Premium"}
+
               {!isPremium && !upgrading && <ArrowRight size={16} />}
             </button>
           </article>
@@ -300,38 +419,72 @@ async function handleUpgrade() {
               </thead>
 
               <tbody className="divide-y divide-[#F0ECE4]">
-                {demoPayments.map((payment) => (
-                  <tr key={payment.id}>
-                    <td className="px-5 py-5 font-semibold">
-                      <span className="flex items-center gap-2">
-                        <CreditCard size={17} className="text-[#A47C55]" />
-                        {payment.plan}
-                      </span>
-                    </td>
-                    <td className="px-5 py-5 font-semibold">
-                      {payment.amount}
-                    </td>
-                    <td className="px-5 py-5">
-                      <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
-                        {payment.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-5 text-[#6B746E]">
-                      <span className="flex items-center gap-2">
-                        <CalendarDays size={15} />
-                        {payment.date}
-                      </span>
+                {loadingSubscription ? (
+                  <tr>
+                    <td colSpan={4} className="px-5 py-10 text-center text-[#6B746E]">
+                      <Loader2 className="mx-auto mb-2 animate-spin" size={22} />
+                      Loading payment history...
                     </td>
                   </tr>
-                ))}
+                ) : payments.length > 0 ? (
+                  payments.map((payment, index) => {
+                    const paymentStatus =
+                      payment.paymentStatus || payment.status || "Processed";
+
+                    const isPaid =
+                      paymentStatus.toLowerCase() === "paid" ||
+                      paymentStatus.toLowerCase() === "succeeded";
+
+                    return (
+                      <tr key={payment._id || `${payment.createdAt}-${index}`}>
+                        <td className="px-5 py-5 font-semibold">
+                          <span className="flex items-center gap-2">
+                            <CreditCard size={17} className="text-[#A47C55]" />
+                           {payment.plan
+                               ? `${payment.plan.charAt(0).toUpperCase()}${payment.plan.slice(1)} Plan`
+                               : "Premium Plan"}
+                          </span>
+                        </td>
+
+                        <td className="px-5 py-5 font-semibold">
+                          {formatAmount(payment.amount, payment.currency)}
+                        </td>
+
+                        <td className="px-5 py-5">
+                          <span
+                            className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                              isPaid
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-amber-50 text-amber-700"
+                            }`}
+                          >
+                            {paymentStatus}
+                          </span>
+                        </td>
+
+                        <td className="px-5 py-5 text-[#6B746E]">
+                          <span className="flex items-center gap-2">
+                            <CalendarDays size={15} />
+                            {formatDate(payment.createdAt)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-5 py-10 text-center text-[#6B746E]">
+                      No payment records found yet.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
         <p className="text-xs leading-5 text-[#8A918C]">
-          Payment records will appear here after your subscription payments
-          are connected.
+          Your subscription and payment information is loaded from your account.
         </p>
       </section>
     </main>

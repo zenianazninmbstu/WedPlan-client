@@ -67,16 +67,16 @@ export default function AddServicePage() {
   const apiUrl =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-  // Authentication check
-  useEffect(() => {
-    if (isPending) return;
+// Authentication check
+useEffect(() => {
+  if (isPending) return;
 
-    if (!session) {
-      router.replace("/login");
-    } else if (session.user.role !== "vendor") {
-      router.replace("/");
-    }
-  }, [session, isPending, router]);
+  if (!session) {
+    router.replace("/sign-in");
+  } else if (session.user.role !== "vendor") {
+    router.replace("/");
+  }
+}, [session, isPending, router]);
 
 // Clean up preview URL
 useEffect(() => {
