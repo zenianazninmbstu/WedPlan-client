@@ -126,7 +126,7 @@ export default function ServicesPage() {
         {/* Search Filters */}
         <form
           onSubmit={handleSearch}
-          className="mb-7 grid grid-cols-1 gap-3 rounded-xl border border-[#EDE7E2] bg-white p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto_auto]"
+          className="mb-7 grid grid-cols-1 items-stretch gap-3 rounded-xl border border-[#EDE7E2] bg-white p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_110px_48px]"
         >
           <input
             type="text"
@@ -169,7 +169,7 @@ export default function ServicesPage() {
 
           <button
             type="submit"
-            className="rounded-lg bg-[#963E4B] px-5 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-[#78313C] focus:outline-none focus:ring-2 focus:ring-[#963E4B]/30"
+           className="mt-auto block w-full rounded-lg bg-[#174C3C] py-2.5 text-center text-sm font-semibold text-white transition duration-200 hover:bg-[#10392D] focus:outline-none focus:ring-2 focus:ring-[#174C3C]/30"
           >
             Search
           </button>
@@ -261,7 +261,7 @@ export default function ServicesPage() {
                   )}
                 </div>
 
-                <div className="p-5">
+                <div className="flex h-[280px] flex-col p-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-[#963E4B]">
                     {service.category}
                   </p>
@@ -291,11 +291,11 @@ export default function ServicesPage() {
                   )}
 
                   <Link
-                    href={`/services/${service._id}`}
-                    className="mt-5 block rounded-lg bg-[#963E4B] py-2.5 text-center text-sm font-semibold text-white transition duration-200 hover:bg-[#78313C] focus:outline-none focus:ring-2 focus:ring-[#963E4B]/30"
-                  >
-                    View Details
-                  </Link>
+  href={`/services/${service._id}`}
+  className="mt-auto block w-full rounded-lg bg-[#174C3C] py-2.5 text-center text-sm font-semibold text-white transition duration-200 hover:bg-[#10392D] focus:outline-none focus:ring-2 focus:ring-[#174C3C]/30"
+>
+  View Details
+</Link>
                 </div>
               </article>
             ))}
