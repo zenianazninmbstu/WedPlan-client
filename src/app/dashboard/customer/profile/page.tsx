@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Camera,
   UserRound,
@@ -10,10 +10,27 @@ import {
   MapPin,
   Save,
 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+type ProfileData = {
+  name: string;
+  email: string;
+  image: string;
+  phone: string;
+  location: string;
+  bio: string;
+};
 
 export default function CustomerProfilePage() {
   const [preview, setPreview] = useState("");
-  const [message, setMessage] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -22,6 +39,53 @@ export default function CustomerProfilePage() {
     location: "",
     bio: "",
   });
+
+  // Load the logged-in customer's profile
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const result = await authClient.token();
+        const token = result.data?.token;
+
+        if (!token) {
+          throw new Error("Please log in again.");
+        }
+
+        const response = await fetch(`${API_URL}/api/users/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to load profile.");
+        }
+
+        const user: ProfileData = data.user || data.data || data;
+
+        setFormData({
+          fullName: user.name || "",
+          email: user.email || "",
+          phone: user.phone || "",
+          location: user.location || "",
+          bio: user.bio || "",
+        });
+
+        setImageUrl(user.image || "");
+        setPreview(user.image || "");
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to load profile."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -32,7 +96,8 @@ export default function CustomerProfilePage() {
     }));
   };
 
-  const handlePhotoChange = (
+  // Upload the selected profile photo
+  const handlePhotoChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
@@ -40,32 +105,119 @@ export default function CustomerProfilePage() {
     if (!file) return;
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setMessage("Please select a JPG, PNG or WEBP image.");
+      toast.error("Please select a JPG, PNG or WEBP image.");
+      e.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setMessage("Image size must be less than 5 MB.");
+      toast.error("Image size must be less than 5 MB.");
+      e.target.value = "";
       return;
     }
 
-    setPreview(URL.createObjectURL(file));
-    setMessage("");
+    setUploading(true);
+
+    try {
+      const result = await authClient.token();
+      const token = result.data?.token;
+
+      if (!token) {
+        throw new Error("Please log in again.");
+      }
+
+      const uploadData = new FormData();
+      uploadData.append("image", file);
+
+      const response = await fetch(`${API_URL}/api/uploads`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: uploadData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.imageUrl) {
+        throw new Error(data.message || "Image upload failed.");
+      }
+
+      setImageUrl(data.imageUrl);
+      setPreview(data.imageUrl);
+
+      toast.success("Photo uploaded successfully!", {
+        description: "Click Save Changes to update your profile.",
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Image upload failed."
+      );
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  // Save profile information
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setMessage(
-      "Profile API integration is pending. Your changes are not saved yet."
-    );
+    setSaving(true);
+
+    try {
+      const result = await authClient.token();
+      const token = result.data?.token;
+
+      if (!token) {
+        throw new Error("Please log in again.");
+      }
+
+      const response = await fetch(`${API_URL}/api/users/me`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: formData.fullName.trim(),
+          image: imageUrl,
+          phone: formData.phone.trim(),
+          location: formData.location.trim(),
+          bio: formData.bio.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update profile.");
+      }
+
+      toast.success("Profile updated successfully!", {
+        description: "Your profile information has been saved.",
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update profile."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const inputClass =
     "w-full rounded-lg border border-gray-200 bg-[#FCFDFB] px-3 py-2 text-sm text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
 
+  if (loading) {
+    return (
+      <div className="flex min-h-[250px] items-center justify-center">
+        <span className="loading loading-spinner loading-lg text-emerald-700"></span>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-4">
-
       {/* Page Heading */}
       <div>
         <p className="text-[11px] font-semibold tracking-[0.18em] text-emerald-700">
@@ -83,8 +235,6 @@ export default function CustomerProfilePage() {
 
       {/* Main Card */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-
-        {/* Card Heading */}
         <div className="mb-4 border-b border-gray-100 pb-3">
           <h2 className="text-lg font-bold text-[#173C2C]">
             Profile Settings
@@ -96,7 +246,6 @@ export default function CustomerProfilePage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-
           {/* Profile Photo */}
           <div className="flex items-center gap-4">
             <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-emerald-100 bg-emerald-50">
@@ -122,12 +271,13 @@ export default function CustomerProfilePage() {
 
               <label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100">
                 <Camera size={14} />
-                Upload New Photo
+                {uploading ? "Uploading..." : "Upload New Photo"}
 
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   onChange={handlePhotoChange}
+                  disabled={uploading}
                   className="hidden"
                 />
               </label>
@@ -136,8 +286,6 @@ export default function CustomerProfilePage() {
 
           {/* Personal Information */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-
-            {/* Full Name */}
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-700">
                 <UserRound size={14} className="text-emerald-700" />
@@ -150,10 +298,11 @@ export default function CustomerProfilePage() {
                 onChange={handleChange}
                 placeholder="Enter your full name"
                 className={inputClass}
+                required
+                maxLength={100}
               />
             </div>
 
-            {/* Email */}
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-700">
                 <Mail size={14} className="text-emerald-700" />
@@ -174,7 +323,6 @@ export default function CustomerProfilePage() {
               </p>
             </div>
 
-            {/* Phone */}
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-700">
                 <Phone size={14} className="text-emerald-700" />
@@ -188,10 +336,10 @@ export default function CustomerProfilePage() {
                 onChange={handleChange}
                 placeholder="Enter your phone number"
                 className={inputClass}
+                maxLength={30}
               />
             </div>
 
-            {/* Location */}
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-700">
                 <MapPin size={14} className="text-emerald-700" />
@@ -204,6 +352,7 @@ export default function CustomerProfilePage() {
                 onChange={handleChange}
                 placeholder="Enter your city or location"
                 className={inputClass}
+                maxLength={150}
               />
             </div>
           </div>
@@ -229,27 +378,17 @@ export default function CustomerProfilePage() {
             </p>
           </div>
 
-          {/* Feedback */}
-          {message && (
-            <p
-              role="status"
-              className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800"
-            >
-              {message}
-            </p>
-          )}
-
           {/* Save Button */}
           <div className="flex justify-end border-t border-gray-100 pt-3">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#173C2C] px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+              disabled={saving || uploading}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#173C2C] px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save size={15} />
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
-
         </form>
       </div>
     </div>
