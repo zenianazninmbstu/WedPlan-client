@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ClipboardList,
@@ -12,45 +13,158 @@ import {
   MapPin,
   Search,
 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 
-const stats = [
-  {
-    title: "Total Requests",
-    value: "12",
-    icon: ClipboardList,
-    color: "bg-[#EAF1EC] text-[#174C3C]",
-  },
-  {
-    title: "Pending",
-    value: "04",
-    icon: Clock3,
-    color: "bg-amber-50 text-amber-600",
-  },
-  {
-    title: "Accepted",
-    value: "06",
-    icon: CheckCircle2,
-    color: "bg-emerald-50 text-emerald-600",
-  },
-  {
-    title: "Rejected",
-    value: "02",
-    icon: XCircle,
-    color: "bg-rose-50 text-rose-600",
-  },
-];
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const recentBookings = [
-  {
-    id: 1,
-    service: "Wedding Photography",
-    date: "25 December 2026",
-    location: "Dhaka, Bangladesh",
-    status: "Accepted",
-  },
-];
+type BookingStatus = "pending" | "accepted" | "rejected" | "cancelled";
+
+type Booking = {
+  _id: string;
+  eventDate: string;
+  eventLocation: string;
+  status: BookingStatus;
+  createdAt: string;
+  service?: {
+    name?: string;
+  };
+};
+
+const formatDate = (date: string) => {
+  if (!date) return "Not available";
+
+  const parsedDate = new Date(
+    date.length === 10 ? `${date}T00:00:00` : date
+  );
+
+  if (Number.isNaN(parsedDate.getTime())) return date;
+
+  return parsedDate.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const formatStatus = (status: BookingStatus) =>
+  status.charAt(0).toUpperCase() + status.slice(1);
 
 export default function CustomerDashboardPage() {
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const result = await authClient.token();
+      const token = result.data?.token;
+
+      if (!token) {
+        throw new Error("Please sign in again to view your dashboard.");
+      }
+
+      const response = await fetch(
+        `${API_URL}/api/bookings/my-bookings`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to load dashboard data.");
+      }
+
+      setBookings(data.bookings || []);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.";
+
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const stats = [
+    {
+      title: "Total Requests",
+      value: bookings.length.toString().padStart(2, "0"),
+      icon: ClipboardList,
+      color: "bg-[#EAF1EC] text-[#174C3C]",
+    },
+    {
+      title: "Pending",
+      value: bookings
+        .filter((booking) => booking.status === "pending")
+        .length.toString()
+        .padStart(2, "0"),
+      icon: Clock3,
+      color: "bg-amber-50 text-amber-600",
+    },
+    {
+      title: "Accepted",
+      value: bookings
+        .filter((booking) => booking.status === "accepted")
+        .length.toString()
+        .padStart(2, "0"),
+      icon: CheckCircle2,
+      color: "bg-emerald-50 text-emerald-600",
+    },
+    {
+      title: "Rejected",
+      value: bookings
+        .filter((booking) => booking.status === "rejected")
+        .length.toString()
+        .padStart(2, "0"),
+      icon: XCircle,
+      color: "bg-rose-50 text-rose-600",
+    },
+  ];
+
+  const recentBookings = [...bookings]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+    )
+    .filter((booking) =>
+      (booking.service?.name || "Wedding Service")
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    )
+    .slice(0, 3);
+
+  const statusStyle = (status: BookingStatus) => {
+    switch (status) {
+      case "accepted":
+        return "bg-emerald-50 text-emerald-700";
+      case "rejected":
+        return "bg-rose-50 text-rose-700";
+      case "cancelled":
+        return "bg-gray-100 text-gray-600";
+      default:
+        return "bg-amber-50 text-amber-700";
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Page Heading */}
@@ -91,9 +205,13 @@ export default function CustomerDashboardPage() {
                 </div>
               </div>
 
-              <h2 className="mt-5 font-playfair text-3xl font-bold text-[#174C3C]">
-                {stat.value}
-              </h2>
+              {loading ? (
+                <div className="mt-5 h-9 w-16 animate-pulse rounded-lg bg-[#E8E1D5]" />
+              ) : (
+                <h2 className="mt-5 font-playfair text-3xl font-bold text-[#174C3C]">
+                  {stat.value}
+                </h2>
+              )}
 
               <p className="mt-1 text-xs text-[#8A918C]">
                 Your booking overview
@@ -132,6 +250,8 @@ export default function CustomerDashboardPage() {
 
             <input
               type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search your booking requests..."
               className="w-full bg-transparent text-sm text-[#174C3C] outline-none placeholder:text-[#A0A69F]"
             />
@@ -148,47 +268,102 @@ export default function CustomerDashboardPage() {
 
         {/* Booking List */}
         <div className="space-y-4">
-          {recentBookings.map((booking) => (
-            <article
-              key={booking.id}
-              className="rounded-2xl border border-[#E8E1D5] bg-white p-5 shadow-sm sm:p-6"
-            >
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
-                  <h3 className="font-playfair text-xl font-semibold text-[#174C3C]">
-                    {booking.service}
-                  </h3>
-
-                  <div className="mt-3 flex flex-col gap-2 text-sm text-[#6B746E] sm:flex-row sm:flex-wrap sm:gap-5">
-                    <span className="flex items-center gap-2">
-                      <CalendarDays size={16} className="text-[#A47C55]" />
-                      {booking.date}
-                    </span>
-
-                    <span className="flex items-center gap-2">
-                      <MapPin size={16} className="text-[#A47C55]" />
-                      {booking.location}
-                    </span>
+          {loading ? (
+            Array.from({ length: 2 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-2xl border border-[#E8E1D5] bg-white p-5 shadow-sm sm:p-6"
+              >
+                <div className="flex animate-pulse flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="h-16 w-16 rounded-xl bg-[#E8E1D5]" />
+                  <div className="flex-1 space-y-3">
+                    <div className="h-4 w-40 rounded bg-[#E8E1D5]" />
+                    <div className="h-3 w-56 rounded bg-[#E8E1D5]" />
+                    <div className="h-3 w-24 rounded bg-[#E8E1D5]" />
                   </div>
                 </div>
-
-                <div className="flex flex-wrap items-center gap-4 lg:justify-end">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    {booking.status}
-                  </span>
-
-                  <Link
-                    href="/dashboard/customer/bookings"
-                    className="inline-flex items-center gap-1 text-sm font-semibold text-[#174C3C] hover:text-[#A47C55]"
-                  >
-                    View Details
-                    <ArrowRight size={15} />
-                  </Link>
-                </div>
               </div>
-            </article>
-          ))}
+            ))
+          ) : error ? (
+            <div className="rounded-2xl border border-red-200 bg-white px-6 py-10 text-center">
+              <p className="text-sm text-red-600">{error}</p>
+              <button
+                onClick={fetchBookings}
+                className="mt-4 rounded-lg bg-[#174C3C] px-5 py-2 text-sm font-semibold text-white hover:bg-[#10392D]"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : recentBookings.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[#E8E1D5] bg-white px-6 py-12 text-center">
+              <ClipboardList
+                className="mx-auto text-[#A0A69F]"
+                size={34}
+              />
+              <h3 className="mt-3 font-semibold text-[#174C3C]">
+                {bookings.length === 0
+                  ? "No bookings yet"
+                  : "No bookings found"}
+              </h3>
+              <p className="mt-1 text-sm text-[#6B746E]">
+                {bookings.length === 0
+                  ? "Your service requests will appear here."
+                  : "Try searching with another service name."}
+              </p>
+            </div>
+          ) : (
+            recentBookings.map((booking) => (
+              <article
+                key={booking._id}
+                className="rounded-2xl border border-[#E8E1D5] bg-white p-5 shadow-sm sm:p-6"
+              >
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <h3 className="font-playfair text-xl font-semibold text-[#174C3C]">
+                      {booking.service?.name || "Wedding Service"}
+                    </h3>
+
+                    <div className="mt-3 flex flex-col gap-2 text-sm text-[#6B746E] sm:flex-row sm:flex-wrap sm:gap-5">
+                      <span className="flex items-center gap-2">
+                        <CalendarDays
+                          size={16}
+                          className="text-[#A47C55]"
+                        />
+                        {formatDate(booking.eventDate)}
+                      </span>
+
+                      <span className="flex items-center gap-2">
+                        <MapPin
+                          size={16}
+                          className="text-[#A47C55]"
+                        />
+                        {booking.eventLocation}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4 lg:justify-end">
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold ${statusStyle(
+                        booking.status
+                      )}`}
+                    >
+                      <span className="h-2 w-2 rounded-full bg-current" />
+                      {formatStatus(booking.status)}
+                    </span>
+
+                    <Link
+                      href="/dashboard/customer/bookings"
+                      className="inline-flex items-center gap-1 text-sm font-semibold text-[#174C3C] hover:text-[#A47C55]"
+                    >
+                      View Details
+                      <ArrowRight size={15} />
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
         </div>
       </section>
     </div>

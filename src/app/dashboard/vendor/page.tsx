@@ -209,9 +209,13 @@ export default function VendorDashboard() {
 
               <p className="mt-5 text-sm text-[#6B746E]">{card.title}</p>
 
-              <h2 className="mt-2 text-3xl font-bold text-[#174C3C]">
-                {isLoadingStats ? "..." : card.value}
-              </h2>
+              {isLoadingStats ? (
+  <div className="mt-3 h-9 w-16 animate-pulse rounded-lg bg-[#E8E1D5]" />
+) : (
+  <h2 className="mt-2 text-3xl font-bold text-[#174C3C]">
+    {card.value}
+  </h2>
+)}
             </div>
           );
         })}

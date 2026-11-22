@@ -19,6 +19,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
+
+
 
 const categories = [
   "Photography & Videography",
@@ -61,8 +64,8 @@ export default function AddServicePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  
+  
 
   const apiUrl =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -91,17 +94,17 @@ useEffect(() => {
   const handleImageSelect = (selectedImage?: File) => {
     if (!selectedImage) return;
 
-    if (!selectedImage.type.startsWith("image/")) {
-      setError("Please select a valid image file.");
-      return;
-    }
+   if (!selectedImage.type.startsWith("image/")) {
+  toast.error("Please select a valid image file.");
+  return;
+}
 
-    if (selectedImage.size > 5 * 1024 * 1024) {
-      setError("Image size must be less than 5 MB.");
-      return;
-    }
+if (selectedImage.size > 5 * 1024 * 1024) {
+  toast.error("Image size must be less than 5 MB.");
+  return;
+}
 
-  setError("");
+  
 
 if (previewUrlRef.current) {
   URL.revokeObjectURL(previewUrlRef.current);
@@ -257,7 +260,7 @@ setPreview("");
     setImagePosition({ x: 50, y: 50 });
     dragStart.current = null;
     setIsDragging(false);
-    setError("");
+    
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -268,18 +271,17 @@ setPreview("");
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    setError("");
-    setMessage("");
+   
 
     if (!image) {
-      setError("Please select a service image.");
-      return;
-    }
+  toast.error("Please select a service image.");
+  return;
+}
 
-    if (Number(price) <= 0 || !Number.isFinite(Number(price))) {
-      setError("Please enter a valid price.");
-      return;
-    }
+if (Number(price) <= 0 || !Number.isFinite(Number(price))) {
+  toast.error("Please enter a valid price.");
+  return;
+}
 
     try {
       setLoading(true);
@@ -341,8 +343,9 @@ setPreview("");
       if (!serviceResponse.ok || !result.success) {
         throw new Error(result.message || "Failed to submit service.");
       }
-
-      setMessage("Your service has been submitted for admin approval!");
+       toast.success("Your service has been submitted for admin approval!", {
+       description: "Your service will appear publicly after admin approval and activation.",
+       });
 
       if (previewUrlRef.current) {
   URL.revokeObjectURL(previewUrlRef.current);
@@ -364,11 +367,12 @@ setPreview("");
         fileInputRef.current.value = "";
       }
     } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong. Please try again."
-      );
+  toast.error(
+    error instanceof Error
+      ? error.message
+      : "Something went wrong. Please try again."
+  );
+
     } finally {
       setLoading(false);
     }
@@ -626,23 +630,10 @@ setPreview("");
             </p>
           </div>
 
-          {/* Messages */}
-          {error && (
-            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
-            </p>
-          )}
+        
 
-          {message && (
-            <div className="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">
-              {message}
-              <p className="mt-1 text-xs">
-                Your service will appear publicly after admin approval
-                and activation.
-              </p>
-            </div>
-          )}
 
+          
           {/* Submit */}
           <button
             type="submit"
