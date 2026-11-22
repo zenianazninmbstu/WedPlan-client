@@ -1,7 +1,13 @@
 
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { toast } from "sonner";
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { authClient } from "@/lib/auth-client";
 
 const API_URL =
@@ -24,11 +30,6 @@ export default function VendorProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error">(
-    "success"
-  );
 
   const getToken = async () => {
     const result = await authClient.token();
@@ -67,10 +68,9 @@ export default function VendorProfilePage() {
         setImage(data.user.image || "");
         setBusinessName(data.user.businessName || "");
       } catch (error) {
-        setMessage(
+        toast.error(
           error instanceof Error ? error.message : "Something went wrong."
         );
-        setMessageType("error");
       } finally {
         setLoading(false);
       }
@@ -87,19 +87,16 @@ export default function VendorProfilePage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setMessage("Please select a valid image.");
-      setMessageType("error");
+      toast.error("Please select a valid image.");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setMessage("Image size must be less than 5MB.");
-      setMessageType("error");
+      toast.error("Image size must be less than 5MB.");
       return;
     }
 
     setUploading(true);
-    setMessage("");
 
     try {
       const token = await getToken();
@@ -122,13 +119,13 @@ export default function VendorProfilePage() {
       }
 
       setImage(data.imageUrl);
-      setMessage("Image uploaded. Save changes to update your profile.");
-      setMessageType("success");
+      toast.success(
+        "Image uploaded. Save changes to update your profile."
+      );
     } catch (error) {
-      setMessage(
+      toast.error(
         error instanceof Error ? error.message : "Image upload failed."
       );
-      setMessageType("error");
     } finally {
       setUploading(false);
       event.target.value = "";
@@ -137,11 +134,9 @@ export default function VendorProfilePage() {
 
   const handleSave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setMessage("");
 
     if (!name.trim() || !businessName.trim()) {
-      setMessage("Name and business name are required.");
-      setMessageType("error");
+      toast.error("Name and business name are required.");
       return;
     }
 
@@ -180,13 +175,11 @@ export default function VendorProfilePage() {
           : previous
       );
 
-      setMessage("Profile updated successfully!");
-      setMessageType("success");
+      toast.success("Profile updated successfully!");
     } catch (error) {
-      setMessage(
+      toast.error(
         error instanceof Error ? error.message : "Profile update failed."
       );
-      setMessageType("error");
     } finally {
       setSaving(false);
     }
@@ -204,7 +197,7 @@ export default function VendorProfilePage() {
     return (
       <main className="flex flex-1 items-center justify-center px-4 py-20">
         <p className="text-center text-red-600">
-          {message || "Unable to load your profile."}
+          Unable to load your profile.
         </p>
       </main>
     );
@@ -320,19 +313,6 @@ export default function VendorProfilePage() {
               />
             </div>
           </div>
-
-          {message && (
-            <p
-              role="status"
-              className={`mt-5 rounded-lg px-4 py-3 text-sm ${
-                messageType === "success"
-                  ? "bg-green-50 text-green-700"
-                  : "bg-red-50 text-red-700"
-              }`}
-            >
-              {message}
-            </p>
-          )}
 
           <button
             type="submit"
