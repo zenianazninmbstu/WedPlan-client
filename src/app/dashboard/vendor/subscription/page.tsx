@@ -13,6 +13,12 @@ import {
   Loader2,
 } from "lucide-react";
 
+import { authClient } from "@/lib/auth-client";
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+
 const freeFeatures = [
   "Maximum 3 Active Services",
   "Basic Vendor Dashboard",
@@ -43,8 +49,43 @@ export default function VendorSubscriptionPage() {
 
   const isPremium = currentPlan === "premium";
 
-  function handleUpgrade() {
-  setNotice("Premium checkout will be available after payment integration.");
+async function handleUpgrade() {
+  try {
+    setUpgrading(true);
+    setNotice("");
+
+    const result = await authClient.token();
+    const token = result.data?.token;
+
+    if (!token) {
+      throw new Error("Please sign in again.");
+    }
+
+    const response = await fetch(
+      `${API_URL}/api/payments/create-checkout-session`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success || !data.url) {
+      throw new Error(data.message || "Unable to start checkout.");
+    }
+
+    window.location.href = data.url;
+  } catch (error) {
+    setNotice(
+      error instanceof Error
+        ? error.message
+        : "Something went wrong. Please try again."
+    );
+    setUpgrading(false);
+  }
 }
 
   return (
