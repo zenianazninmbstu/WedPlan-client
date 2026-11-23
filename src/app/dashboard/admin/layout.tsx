@@ -37,11 +37,11 @@ const adminLinks = [
     description: "Track verified payments and subscription transactions.",
   },
   {
-    name: "Profile Settings",
-    href: "/dashboard/admin/profile",
-    icon: Settings,
-    description: "Manage your administrator profile information.",
-  },
+  name: "Profile Settings",
+  href: "/profile-settings",
+  icon: Settings,
+  description: "Manage your administrator profile information.",
+},
 ];
 
 export default function AdminLayout({
