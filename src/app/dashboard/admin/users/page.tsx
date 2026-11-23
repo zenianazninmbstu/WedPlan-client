@@ -11,6 +11,10 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+"use client";
+
+
+
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
