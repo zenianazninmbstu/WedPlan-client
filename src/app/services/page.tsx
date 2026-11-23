@@ -88,10 +88,16 @@ export default function ServicesPage() {
     fetchServices("", "", "", "newest");
   }, []);
 
-  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    fetchServices();
-  };
+ const handleSearch = (e: FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+
+  fetchServices(
+    search,
+    category,
+    location,
+    sort
+  );
+};
 
   const handleReset = () => {
     setSearch("");
