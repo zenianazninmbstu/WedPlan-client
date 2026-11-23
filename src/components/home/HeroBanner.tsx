@@ -79,22 +79,29 @@ export default function HeroBanner() {
 </motion.h1>
 
         {/* Three-level description */}
+
 <motion.div
   initial={{ opacity: 0, y: 20 }}
   animate={{ opacity: 1, y: 0 }}
   transition={{ duration: 1, delay: 0.4 }}
   className="mx-auto mt-5 max-w-4xl text-center font-sans text-base font-normal leading-relaxed text-white sm:text-lg"
 >
- <p>
-  Your wedding is more than a celebration it is the beginning
-</p>
-<p>
-   of a beautiful chapter filled with love joy and 
-</p>
-<p>
-  memories to last a lifetime.
-</p>
+  <p className="hidden sm:block">
+    Your wedding is more than a celebration it is the beginning
+  </p>
+  <p className="hidden sm:block">
+    of a beautiful chapter filled with love joy and
+  </p>
+  <p className="hidden sm:block">
+    memories to last a lifetime.
+  </p>
+
+  <p className="px-3 text-sm leading-7 sm:hidden">
+    Your wedding is more than a celebration. It is the beginning of a
+    beautiful chapter filled with love, joy, and memories to last a lifetime.
+  </p>
 </motion.div>
+
 
         <motion.div
           initial={{ opacity: 0, y: 18 }}
