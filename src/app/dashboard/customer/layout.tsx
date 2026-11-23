@@ -77,7 +77,7 @@ export default function CustomerLayout({
               Customer Dashboard
             </h2>
 
-            <nav className="flex gap-2 overflow-x-auto pb-2">
+           <nav className="grid grid-cols-2 gap-2 pb-2">
               {customerLinks.map((link) => {
                 const Icon = link.icon;
                 const active =
@@ -89,7 +89,7 @@ export default function CustomerLayout({
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${
+                   className={`flex min-w-0 items-center justify-center gap-2 rounded-lg px-2 py-3 text-xs font-medium ${
                       active
                         ? "bg-[#174C3C] text-white"
                         : "bg-[#F3F4F0] text-[#59665E]"
