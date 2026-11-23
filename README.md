@@ -4,7 +4,7 @@ WedPlan is a full-stack wedding planning platform where customers can discover p
 
 ## 🌐 Live Website
 
-[Add your deployed client URL here]
+🔗 https://wedplan-client-blond.vercel.app/
 
 ## 📂 Project Repositories
 

@@ -149,9 +149,9 @@ export default function SignUpPage() {
 
     try {
       await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/",
-      });
+  provider: "google",
+  callbackURL: `${window.location.origin}/dashboard/customer`,
+});
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Google sign up failed."
