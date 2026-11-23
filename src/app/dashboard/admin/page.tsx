@@ -158,7 +158,7 @@ return (
 
           <div className="mt-6 flex flex-1 flex-col justify-center gap-4">
             <Link
-              href="/dashboard/admin/services"
+               href="/dashboard/admin/manage-services"
               className="flex items-center justify-center gap-2 rounded-xl border border-[#174C3C] px-5 py-3 text-sm font-semibold text-[#174C3C] transition hover:bg-[#E5EFE8]"
             >
               <BriefcaseBusiness size={18} />
