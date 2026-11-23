@@ -176,11 +176,12 @@ export default function ServiceDetailsPage() {
           <section>
             <div className="h-72 overflow-hidden rounded-2xl bg-[#EEE9E5] sm:h-96">
               {service.images?.[0] ? (
-                <img
-                  src={service.images[0]}
-                  alt={service.name}
-                  className="h-full w-full object-cover"
-                />
+            <img
+              src={service.images[0]}
+               alt={service.name}
+  onError={() => console.log("Broken image URL:", service.images?.[0])}
+  className="h-full w-full object-cover"
+               />
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-gray-500">
                   No image available

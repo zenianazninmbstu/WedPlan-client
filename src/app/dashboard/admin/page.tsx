@@ -1,4 +1,4 @@
-
+"use client";
 import Link from "next/link";
 import {
   Users,
@@ -12,41 +12,64 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-const stats = [
-  {
-    title: "Total Registered Users",
-    value: "—",
-    icon: Users,
-  },
-  {
-    title: "Total Vendors",
-    value: "—",
-    icon: Store,
-  },
-  {
-    title: "Total Customers",
-    value: "—",
-    icon: UserRound,
-  },
-  {
-    title: "Total Services",
-    value: "—",
-    icon: BriefcaseBusiness,
-  },
-  {
-    title: "Pending Services",
-    value: "—",
-    icon: Clock,
-  },
-  {
-    title: "Total Transactions",
-    value: "—",
-    icon: Receipt,
-  },
-];
+import { useEffect, useState } from "react";
+import { authClient } from "@/lib/auth-client";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+
 
 export default function AdminOverviewPage() {
-  return (
+  const [statsData, setStatsData] = useState({
+  totalUsers: 0,
+  totalVendors: 0,
+  totalCustomers: 0,
+  totalServices: 0,
+  pendingServices: 0,
+  totalTransactions: 0,
+  totalRevenue: 0,
+});
+
+useEffect(() => {
+  const fetchAdminStats = async () => {
+    try {
+      const tokenResult = await authClient.token();
+      const token = tokenResult.data?.token;
+
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
+
+      const response = await fetch(`${API_URL}/api/payments/admin-stats`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Failed to load admin statistics");
+      }
+
+      setStatsData(result.stats);
+    } catch (error) {
+      console.error("Admin stats error:", error);
+    }
+  };
+
+  fetchAdminStats();
+}, []);
+
+const stats = [
+  { title: "Total Registered Users", value: statsData.totalUsers, icon: Users },
+  { title: "Total Vendors", value: statsData.totalVendors, icon: Store },
+  { title: "Total Customers", value: statsData.totalCustomers, icon: UserRound },
+  { title: "Total Services", value: statsData.totalServices, icon: BriefcaseBusiness },
+  { title: "Pending Services", value: statsData.pendingServices, icon: Clock },
+  { title: "Total Transactions", value: statsData.totalTransactions, icon: Receipt },
+];
+return (
     <div className="space-y-7">
       {/* Statistics Cards */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -97,7 +120,10 @@ export default function AdminOverviewPage() {
 
           <div className="my-6">
             <p className="text-4xl font-bold text-[#174C3C]">
-              $—
+              ${statsData.totalRevenue.toLocaleString("en-US", {
+               minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+               })}
             </p>
 
             <div className="mt-3 flex items-start gap-2">
