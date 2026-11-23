@@ -76,26 +76,66 @@ export default function FeaturedWeddingServices() {
       <div className="mx-auto max-w-7xl">
 
         {/* Section Heading */}
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="mx-auto mb-12 max-w-2xl text-center sm:mb-16"
-        >
-          <span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.3em] text-[#A47C55]">
-            Make Your Day Special
-          </span>
+        
+{/* Section Heading */}
+<motion.div
+  initial="hidden"
+  whileInView="visible"
+  viewport={{ once: true, amount: 0.5 }}
+  variants={{
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.18,
+      },
+    },
+  }}
+  className="mx-auto mb-12 max-w-2xl text-center sm:mb-16"
+>
+  <motion.span
+    variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.6 },
+      },
+    }}
+    className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.3em] text-[#A47C55]"
+  >
+    Make Your Day Special
+  </motion.span>
 
-          <h2 className="font-playfair text-3xl font-semibold text-[#174C3C] sm:text-4xl lg:text-5xl">
-            Featured Wedding Services
-          </h2>
+  <motion.h2
+    variants={{
+      hidden: { opacity: 0, y: 25 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.7 },
+      },
+    }}
+    className="font-playfair text-3xl font-semibold text-[#174C3C] sm:text-4xl lg:text-5xl"
+  >
+    Featured Wedding Services
+  </motion.h2>
 
-          <p className="mt-4 text-sm leading-7 text-[#6B746E] sm:text-base">
-            Discover exceptional wedding professionals and beautiful
-            services to bring your dream celebration to life.
-          </p>
-        </motion.div>
+  <motion.p
+    variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.6 },
+      },
+    }}
+    className="mt-4 text-sm leading-7 text-[#6B746E] sm:text-base"
+  >
+    Discover exceptional wedding professionals and beautiful
+    services to bring your dream celebration to life.
+  </motion.p>
+</motion.div>
+
 
         {/* Loading State */}
         {loading && (
